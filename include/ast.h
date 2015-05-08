@@ -5,6 +5,9 @@
 #ifndef __ast_h__
 #define __ast_h__
 #define nullptr (0)
+
+#include "type.h"
+
 using namespace std;
 
 typedef enum {
@@ -39,11 +42,6 @@ typedef enum {
 } StorageClassSpecifier;
 
 typedef enum {
-	TQ_CONST,
-	TQ_VOLATILE
-} TypeQualifier;
-
-typedef enum {
 	TS_VOID,
 	TS_CHAR,
 	TS_SHORT,
@@ -59,34 +57,12 @@ class DeclarationSpecASTNode;
 class DeclaratorASTNode;
 class TypeSpecNode;
 
-typedef vector<TypeQualifier>			TypeQualifierList;
 typedef vector<TypeSpecNode *>			TypeSpecList;
 typedef vector<StorageClassSpecifier>		StorageClassList;
 typedef vector<DeclarationSpecASTNode *>	DeclarationSpecList;
 typedef vector<DeclaratorASTNode *>		DeclaratorList;
 
 class Symbol {};
-
-class TypeNode {
-public:
-	TypeQualifierList	qualifiers;
-	TypeNode(TypeQualifierList &quals): qualifiers(quals) {};
-	TypeNode() {};
-	virtual int64_t		getStorageSize() =0; 
-	virtual string		toString()=0;
-	virtual ~TypeNode() {};
-};
-
-class BaseTypeNode : public TypeNode {
-public:
-	virtual void		enlargen() =0;
-	virtual void		shrink() =0;
-	virtual void		makeSigned() =0;
-	virtual void		makeUnsigned() =0;
-	virtual string		toString()=0;
-	BaseTypeNode(TypeQualifierList &qls): TypeNode(qls) {};
-	virtual ~BaseTypeNode() {};
-};
 
 class ASTNode {
 public:
@@ -199,61 +175,6 @@ public:
 	virtual 		~BuiltinTypeSpecNode() {};
 				 BuiltinTypeSpecNode(TypeSpecifier spec):
 					 specifier(spec) {};		
-};
-
-class PointerTypeNode : public TypeNode {//IMPL: symtype.cpp
-public:
-	TypeNode		*targetType;
-	PointerTypeNode(TypeQualifierList &qls, TypeNode *trg): 
-				TypeNode(qls),
-				targetType(trg) {};
-	virtual int64_t		 getStorageSize(); 
-	virtual string		toString();
-	virtual ~PointerTypeNode() {
-		delete targetType;
-	};
-};
-
-class ArrayTypeNode : public TypeNode {
-public:
-	TypeNode		*memberType;
-	int64_t			 memberCount;
-	virtual int64_t		 getStorageSize(); 
-	virtual string		toString();
-	ArrayTypeNode(TypeNode *mt, int64_t mc):
-				memberType(mt), memberCount(mc) {};
-	virtual ~ArrayTypeNode() {
-		delete memberType;
-	}
-};
-
-class BuiltinTypeNode : public BaseTypeNode {
-private:
-	bool			isLongInt;
-	bool			isShrunk;
-	bool			hasSignChanged;
-public:
-	int			width;
-	bool			isFloat;
-	bool			isSigned;
-	virtual string		toString();
-
-	virtual ~BuiltinTypeNode() {};
-	BuiltinTypeNode(TypeQualifierList &qls, int wd, bool flt, bool sgn):
-		BaseTypeNode(qls),
-		width(wd), isFloat(flt), isSigned(sgn),
-		isLongInt(false), isShrunk(false),
-		hasSignChanged(false) {};
-	BuiltinTypeNode(TypeQualifierList &qls, int wd, bool flt):
-		BaseTypeNode(qls),
-		width(wd), isFloat(flt), isSigned(true), 
-		isLongInt(false), isShrunk(false),
-		hasSignChanged(false) {};
-	virtual void		enlargen();    
-	virtual void		shrink();      
-	virtual void		makeSigned();  
-	virtual void		makeUnsigned();
-	virtual int64_t		getStorageSize() { return width; };
 };
 
 class PointerSpecASTNode;

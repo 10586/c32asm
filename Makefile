@@ -17,7 +17,7 @@ LDFLAGS=-g
 OBJPP=$(BUILDDIR)main.opp \
 	$(BUILDDIR)astcore.opp \
 	$(BUILDDIR)astdecl.opp \
-	$(BUILDDIR)asttype.opp \
+	$(BUILDDIR)symtype.opp \
 	$(BUILDDIR)asteval.opp
 
 $(BUILDDIR)%.opp: $(SRCDIR)%.cpp

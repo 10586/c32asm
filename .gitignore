@@ -1,0 +1,5 @@
+*.o
+*.opp
+out/*
+int/*
+*.swp
