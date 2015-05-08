@@ -16,72 +16,80 @@ typedef enum {
 
 typedef vector<TypeQualifier>                   TypeQualifierList;
 
-class TypeNode {
+class Type {
 public:
         TypeQualifierList       qualifiers;
-        TypeNode(TypeQualifierList &quals): qualifiers(quals) {};
-        TypeNode() {};
-        virtual int64_t         getStorageSize() =0;
-        virtual string          toString()=0;
-        virtual ~TypeNode() {};
+        Type(TypeQualifierList &quals): qualifiers(quals) {};
+        Type() {};
+	virtual Type		*clone() =0;
+	virtual int64_t          getStorageSize() =0;
+        virtual string           toString()=0;
+        virtual ~Type() {};
 };
 
-class BaseTypeNode : public TypeNode {
+class BaseType : public Type {
 public:
-        virtual void            enlargen() =0;
-        virtual void            shrink() =0;
-        virtual void            makeSigned() =0;
-        virtual void            makeUnsigned() =0;
-        virtual string          toString()=0;
-        BaseTypeNode(TypeQualifierList &qls): TypeNode(qls) {};
-        virtual ~BaseTypeNode() {};
+        virtual void             enlargen() =0;
+        virtual void             shrink() =0;
+        virtual void             makeSigned() =0;
+        virtual void             makeUnsigned() =0;
+        virtual string           toString() =0;
+	virtual	Type		*clone() =0;
+        BaseType(TypeQualifierList &qls): Type(qls) {};
+        virtual ~BaseType() {};
 };
 
-class PointerTypeNode : public TypeNode {//IMPL: symtype.cpp
+class PointerType : public Type {//IMPL: symtype.cpp
 public:
-        TypeNode                *targetType;
-        PointerTypeNode(TypeQualifierList &qls, TypeNode *trg):
-                                TypeNode(qls),
-                                targetType(trg) {};
+        Type			*targetType;
+	virtual Type		*clone();
+        PointerType(TypeQualifierList &qls, Type &trg):
+                                Type(qls),
+                                targetType(trg.clone()) {};
         virtual int64_t          getStorageSize();
         virtual string          toString();
-        virtual ~PointerTypeNode() {
-                delete targetType;
-        };
+	PointerType(const PointerType &Orig );
+	PointerType & operator=(const PointerType & Orig);
+        virtual ~PointerType() {
+		delete targetType;
+	};
 };
 
-class ArrayTypeNode : public TypeNode {
+class ArrayType : public Type {
 public:
-        TypeNode                *memberType;
+        Type			*memberType;
+	virtual Type		*clone();
         int64_t                  memberCount;
         virtual int64_t          getStorageSize();
-        virtual string          toString();
-        ArrayTypeNode(TypeNode *mt, int64_t mc):
-                                memberType(mt), memberCount(mc) {};
-        virtual ~ArrayTypeNode() {
-                delete memberType;
-        }
+        virtual string           toString();
+	ArrayType(const ArrayType &Orig);
+	ArrayType & operator=(const ArrayType & Orig);
+        ArrayType(Type &mt, int64_t mc):
+		memberType(mt.clone()), memberCount(mc) {};
+        virtual ~ArrayType() {
+		delete memberType;
+	};
 };
 
-class BuiltinTypeNode : public BaseTypeNode {
+class BuiltinType : public BaseType {
 private:
-        bool                    isLongInt;
-        bool                    isShrunk;
-        bool                    hasSignChanged;
+        bool                     isLongInt;
+        bool                     isShrunk;
+        bool                     hasSignChanged;
 public:
-        int                     width;
-        bool                    isFloat;
-        bool                    isSigned;
-        virtual string          toString();
-
-        virtual ~BuiltinTypeNode() {};
-        BuiltinTypeNode(TypeQualifierList &qls, int wd, bool flt, bool sgn):
-                BaseTypeNode(qls),
+        int                      width;
+        bool                     isFloat;
+        bool                     isSigned;
+        virtual string           toString();
+	virtual Type		*clone();
+        virtual ~BuiltinType() {};
+        BuiltinType(TypeQualifierList &qls, int wd, bool flt, bool sgn):
+                BaseType(qls),
                 width(wd), isFloat(flt), isSigned(sgn),
                 isLongInt(false), isShrunk(false),
                 hasSignChanged(false) {};
-        BuiltinTypeNode(TypeQualifierList &qls, int wd, bool flt):
-                BaseTypeNode(qls),
+        BuiltinType(TypeQualifierList &qls, int wd, bool flt):
+                BaseType(qls),
                 width(wd), isFloat(flt), isSigned(true),
                 isLongInt(false), isShrunk(false),
 	        hasSignChanged(false) {};

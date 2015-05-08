@@ -103,7 +103,7 @@ public:
 class DeclarationASTNode : public ASTNode {
 private:
 	bool			 declSpecAdded;
-	BaseTypeNode		*baseType;
+	BaseType		*baseType;
 	void			 addDeclarationSpecifiers( void );
 public:
 	DeclarationSpecList	*specifiers;
@@ -111,7 +111,7 @@ public:
 	TypeSpecList		 typeSpecifiers;
 	TypeQualifierList	 typeQualifiers;
 	StorageClassList	 storageClasses;
-	BaseTypeNode		*getBaseType( void );
+	BaseType		*getBaseType( void );
 	void			 declareSymbols();
 	virtual ~DeclarationASTNode();
 	DeclarationASTNode(DeclarationSpecList *sp, DeclaratorList *dc):
@@ -148,7 +148,7 @@ public:
 	virtual TypeSpecNode	*clone ( void ) =0;
 	virtual	bool		 isRootType( void ) =0;
 	virtual void		 addToDeclaration(DeclarationASTNode &decl);
-	virtual BaseTypeNode	*getType( BaseTypeNode* OldType, 
+	virtual BaseType	*getType( BaseType* OldType, 
 					  TypeQualifierList &Quals ) =0;
 	virtual ~TypeSpecNode()  {};
 };
@@ -158,7 +158,7 @@ public:
 	string			typeName;
 	virtual TypeSpecNode	*clone ( void );
 	virtual	bool		isRootType( void ) { return true; }
-	virtual BaseTypeNode	*getType( BaseTypeNode* OldType, 
+	virtual BaseType	*getType( BaseType* OldType, 
 					  TypeQualifierList &Quals );
 	virtual			~NamedTypeSpecNode() {};
 				 NamedTypeSpecNode(string name): 
@@ -170,7 +170,7 @@ public:
 	TypeSpecifier		specifier;
 	virtual TypeSpecNode	*clone ( void );
 	virtual	bool		isRootType( void );
-	virtual BaseTypeNode	*getType( BaseTypeNode* OldType, 
+	virtual BaseType	*getType( BaseType* OldType, 
 					  TypeQualifierList &Quals );
 	virtual 		~BuiltinTypeSpecNode() {};
 				 BuiltinTypeSpecNode(TypeSpecifier spec):
@@ -184,7 +184,7 @@ public:
 	TypeQualifierList	*qualifiers;
 	PointerSpecASTNode	*pointerFrom;
 
-	TypeNode		*generateType( TypeNode *targetType );
+	Type			*generateType( Type &targetType );
 
 	PointerSpecASTNode(TypeQualifierList* qls, PointerSpecASTNode *from): 
 		qualifiers(qls), pointerFrom(from) { };
@@ -201,14 +201,14 @@ public:
 
 class DeclaratorASTNode : public ASTNode {//IMPL: astdecl.cpp
 public:
-	virtual Symbol		*makeSymbol( TypeNode *outerType ) =0;
+	virtual Symbol		*makeSymbol( Type &outerType ) =0;
 	virtual ~DeclaratorASTNode() {};
 };
 
 class SymbolDeclaratorNode : public DeclaratorASTNode {
 public:
 	string			name;
-	virtual Symbol		*makeSymbol( TypeNode *outerType );
+	virtual Symbol		*makeSymbol( Type &outerType );
 	virtual ~SymbolDeclaratorNode() {};
 	SymbolDeclaratorNode(string nm): name(nm){};
 };
@@ -217,7 +217,7 @@ class PointerDeclaratorNode : public DeclaratorASTNode {
 public:
 	DeclaratorASTNode	*inner;
 	PointerSpecASTNode	*pointer;
-	virtual Symbol		*makeSymbol( TypeNode *outerType );
+	virtual Symbol		*makeSymbol( Type &outerType );
 	virtual ~PointerDeclaratorNode() {
 		delete inner;
 		delete pointer;
@@ -230,7 +230,7 @@ class ArrayDeclaratorNode : public DeclaratorASTNode {
 public:
 	DeclaratorASTNode	*inner;
 	ExpressionASTNode	*sizeExpression;	
-	virtual Symbol		*makeSymbol( TypeNode *outerType );
+	virtual Symbol		*makeSymbol( Type &outerType );
 	virtual ~ArrayDeclaratorNode() {
 		delete inner;
 		delete sizeExpression;
@@ -243,7 +243,7 @@ class FunctionDeclaratorNode : DeclaratorASTNode {
 public:
 	DeclaratorASTNode	*inner;
 	ParameterDeclList	*parameters;	
-	virtual Symbol		*makeSymbol( TypeNode *outerType );
+	virtual Symbol		*makeSymbol( TypeNode &outerType );
 	virtual ~FunctionDeclaratorNode() {
 		delete inner;
 		delete parameters;

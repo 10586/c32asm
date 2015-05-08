@@ -2,7 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <cstdlib>
-#include "ast.h"
+#include "type.h"
 #include "config.h"
 
 char* itoa(int val, int base=10){
@@ -19,28 +19,68 @@ char* itoa(int val, int base=10){
 	
 }
 
-string PointerTypeNode::toString()
+PointerType::PointerType(const PointerType &Orig) {
+	targetType = Orig.targetType->clone();
+};
+
+PointerType & PointerType::operator=(const PointerType &Orig) {
+	if (this == &Orig)
+        	return *this;
+	delete targetType;
+	targetType = Orig.targetType->clone();
+	return *this;
+};
+
+Type *PointerType::clone()
+{
+	return new PointerType(*this);
+}
+
+string PointerType::toString()
 {
 	return "pointer to " + targetType->toString();
 }
 
-int64_t PointerTypeNode::getStorageSize()
+int64_t PointerType::getStorageSize()
 {
 	return MACH_PTR_SIZE;
 }
 
-string ArrayTypeNode::toString()
+ArrayType::ArrayType(const ArrayType &Orig) {
+	memberType = Orig.memberType->clone();
+};
+
+ArrayType & ArrayType::operator=(const ArrayType &Orig) {
+	if (this == &Orig)
+        	return *this;
+	delete memberType;
+	memberType = Orig.memberType->clone();
+	memberCount = Orig.memberCount;
+	return *this;
+};
+
+Type *ArrayType::clone()
+{
+	return new ArrayType(*this);
+}
+
+string ArrayType::toString()
 {
 	return string("array[") + string(itoa(memberCount)) + string("] of ") + 
 		memberType->toString();
 }
 
-int64_t ArrayTypeNode::getStorageSize()
+int64_t ArrayType::getStorageSize()
 {
 	return memberCount * memberType->getStorageSize();
 }
 
-string BuiltinTypeNode::toString()
+Type *BuiltinType::clone()
+{
+	return new BuiltinType(*this);
+}
+
+string BuiltinType::toString()
 {
 	return string(isSigned ? "signed" : "unsigned") + 
 		string(isFloat ? "float" : "integer") + 
@@ -59,7 +99,7 @@ void floatModifierSpec()
 	exit(EXIT_FAILURE);
 }
 
-void BuiltinTypeNode::enlargen()
+void BuiltinType::enlargen()
 {
 	if (isShrunk) {
 		ambiguousTypeSizeSpec();
@@ -83,7 +123,7 @@ void BuiltinTypeNode::enlargen()
 	}
 }
 
-void BuiltinTypeNode::shrink()
+void BuiltinType::shrink()
 {
 	if (isShrunk || isLongInt) {
 		ambiguousTypeSizeSpec();
@@ -103,7 +143,7 @@ void ambiguousTypeSignSpec()
 	cerr << "ambiguous type signedness specified.\n";
 }
 
-void BuiltinTypeNode::makeSigned()
+void BuiltinType::makeSigned()
 {
 	if (hasSignChanged) {
 		ambiguousTypeSizeSpec();
@@ -115,7 +155,7 @@ void BuiltinTypeNode::makeSigned()
 	}
 }
 
-void BuiltinTypeNode::makeUnsigned()
+void BuiltinType::makeUnsigned()
 {
 	if (hasSignChanged) {
 		ambiguousTypeSizeSpec();

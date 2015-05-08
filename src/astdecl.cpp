@@ -43,7 +43,7 @@ void DeclarationASTNode::addDeclarationSpecifiers( void )
 		(*it)->addToDeclaration(*this); 
 }
 
-BaseTypeNode *DeclarationASTNode::getBaseType( void ) {
+BaseType *DeclarationASTNode::getBaseType( void ) {
 	
 	if (baseType != nullptr)
 		return baseType;
@@ -64,8 +64,8 @@ BaseTypeNode *DeclarationASTNode::getBaseType( void ) {
 	}
 	
 	if (baseType == nullptr)
-		baseType = new BuiltinTypeNode(typeQualifiers,
-						32, false, true);//int32_t (int)
+		baseType = new BuiltinType(typeQualifiers,
+					32, false, true);//int32_t (int)
 	
 	for (TypeSpecList::iterator it = typeSpecifiers.begin();
 		it != typeSpecifiers.end();
@@ -86,7 +86,7 @@ void DeclarationASTNode::declareSymbols()
 		it != declarators->end();
 		++it) {
 		DeclaratorASTNode *decl = *it;
-		decl->makeSymbol(baseType);
+		decl->makeSymbol(*baseType);
 	}
 }
 
@@ -100,7 +100,7 @@ TypeSpecNode *NamedTypeSpecNode::clone()
 	return new NamedTypeSpecNode( *this );
 }
 
-BaseTypeNode *NamedTypeSpecNode::getType( BaseTypeNode* OldType, 
+BaseType *NamedTypeSpecNode::getType( BaseType* OldType, 
 					  TypeQualifierList &Quals ){
 	if ( OldType != nullptr ) {
 		//TODO: Proper error handling
@@ -108,7 +108,7 @@ BaseTypeNode *NamedTypeSpecNode::getType( BaseTypeNode* OldType,
 		exit(EXIT_FAILURE);
 		return OldType;
 	}
-	return new BuiltinTypeNode(Quals, false, false);
+	return new BuiltinType(Quals,0, false, false);
 	//TODO: Decide on typename tagging for type checks
 	//TODO: Implement typedef storage lookup here
 }
@@ -146,7 +146,7 @@ void builtinTypeUnspecified( void ){
 	exit(EXIT_FAILURE);
 }
 
-BaseTypeNode *BuiltinTypeSpecNode::getType ( BaseTypeNode* OldType, 
+BaseType *BuiltinTypeSpecNode::getType ( BaseType* OldType, 
 					 TypeQualifierList &Quals ) {
 	switch ( specifier ) {
 		/* Root Types */
@@ -155,32 +155,31 @@ BaseTypeNode *BuiltinTypeSpecNode::getType ( BaseTypeNode* OldType,
 				builtinTypeOverspecified();
 				return OldType;
 			}
-			return new BuiltinTypeNode(Quals, 0, false, false);
+			return new BuiltinType(Quals, 0, false, false);
 		case TS_CHAR:
 			if ( OldType != nullptr ) {
 				builtinTypeOverspecified();
 				return OldType;
 			}
-			return new BuiltinTypeNode(Quals, 8, false, false);
+			return new BuiltinType(Quals, 8, false, false);
 		case TS_INT:
 			if ( OldType != nullptr ) {
 				builtinTypeOverspecified();
 				return OldType;
 			}
-			return new BuiltinTypeNode(Quals, 32, false, true);
+			return new BuiltinType(Quals, 32, false, true);
 		case TS_FLOAT:
 			if ( OldType != nullptr ) {
 				builtinTypeOverspecified();
 				return OldType;
 			}
-			return new BuiltinTypeNode(Quals, 32, true);
+			return new BuiltinType(Quals, 32, true);
 		case TS_DOUBLE:
 			if ( OldType != nullptr ) {
 				builtinTypeOverspecified();
 				return OldType;
 			}
-			return new BuiltinTypeNode(Quals, 64, true);
-
+			return new BuiltinType(Quals, 64, true);
 		/* Modifier Types */
 		case TS_LONG:
 			if ( OldType == nullptr ) {
@@ -220,30 +219,38 @@ BaseTypeNode *BuiltinTypeSpecNode::getType ( BaseTypeNode* OldType,
 	}
 }
 
-TypeNode *PointerSpecASTNode::generateType( TypeNode *targetType )
+Type *PointerSpecASTNode::generateType( Type &targetType )
 {
-	TypeNode *ourType = new PointerTypeNode(*qualifiers, targetType);
-	return (pointerFrom == nullptr) ? 
-			ourType : 
-			(pointerFrom->generateType(ourType));
+	Type *ourType = new PointerType(*qualifiers, targetType);
+	if ( pointerFrom != nullptr ) {
+		Type *subType = pointerFrom->generateType(*ourType);
+		delete ourType;
+		return subType;
+	}
+	return ourType;
 }
 
-Symbol *SymbolDeclaratorNode::makeSymbol( TypeNode *outerType )
+Symbol *SymbolDeclaratorNode::makeSymbol( Type &outerType )
 {
-	cout << "Declaring symbol " << name << " as " << outerType->toString() << "\n";
+	cout << "Declaring symbol " << name << " as " << outerType.toString() << "\n";
 	//TODO: Create symbol
 	return nullptr;
 }
 
-Symbol *PointerDeclaratorNode::makeSymbol( TypeNode *outerType )
+Symbol *PointerDeclaratorNode::makeSymbol( Type &outerType )
 {
-	return inner->makeSymbol( pointer->generateType(outerType) );
+	Type *ptrType = pointer->generateType( outerType );
+	Symbol *sym = inner->makeSymbol( *ptrType );
+	delete ptrType;
+	return sym;
 }
 
-Symbol *ArrayDeclaratorNode::makeSymbol( TypeNode *outerType )
+Symbol *ArrayDeclaratorNode::makeSymbol( Type &outerType )
 {
-	TypeNode *ourType = new ArrayTypeNode( outerType, sizeExpression->evaluate() );
-	return inner->makeSymbol( ourType );
+	Type *ourType = new ArrayType( outerType, sizeExpression->evaluate() );
+	Symbol *sym = inner->makeSymbol( *ourType );
+	delete ourType;
+	return sym;
 }
 
 /*
