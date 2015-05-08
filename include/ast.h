@@ -72,7 +72,8 @@ public:
 class ExpressionASTNode : public ASTNode {
 public:
 	virtual 		~ExpressionASTNode(){};
-	virtual int64_t		evaluate() =0;
+	virtual Value		*evaluate() =0;
+	virtual Value		*generate() =0;
 };
 
 class ReferenceASTNode : public ExpressionASTNode {
@@ -80,13 +81,15 @@ public:
 	Symbol referencedSymbol;
 	virtual ~ReferenceASTNode(){};
 	ReferenceASTNode(string &name){};
-	virtual int64_t		evaluate();//IMPL: astcore.cpp
+	virtual Value		*evaluate();//IMPL: astcore.cpp
+	virtual	Value		*generate();
 };
 
 class IntegerASTNode : public ExpressionASTNode {
 public:
 	string value;
-	virtual int64_t		evaluate();//IMPL: asteval.cpp
+	virtual Value		*evaluate();//IMPL: asteval.cpp
+	virtual Value		*generate();
 	IntegerASTNode(string val):
 		value(val) {};
 	virtual ~IntegerASTNode() {};
@@ -96,9 +99,38 @@ class StringASTNode : public ExpressionASTNode {
 public:
 	string value;
 	StringASTNode(string &val): value(val){}
-	virtual int64_t 	evaluate() {return 0;};
+	virtual Value		*evaluate();
+	virtual Value		*generate();
 	virtual ~StringASTNode() {};
 };
+
+class UnaryExpression : public ExpressionASTNode {
+public:
+	ExpressionASTNode	*inner;
+	Operation		 operation;
+	virtual Value		*generate();
+	virtual Value		*evaluate();
+	UnaryExpression(Operation op, ExpressionASTNode *in):
+		operation(op), inner(in) {};
+	virtual ~UnaryExpression() {
+		delete inner;
+	};
+}
+
+class InfixExpression : public ExpressionASTNode {
+public:
+	ExpressionASTNode	*lefthand;
+	ExpressionASTNode	*righthand;
+	Operation		 operation;
+	virtual Value		*generate();
+	virtual Value		*evaluate();
+	InfixExpression(Operation op, ExpressionASTNode *lhs, ExpressionASTNode *rhs):
+		operation(op), lefthand(lhs), righthand(rhs) {};
+	virtual ~InfixExpression() {
+		delete lefthand;
+		delete righthand;
+	};
+}
 
 class DeclarationASTNode : public ASTNode {
 private:

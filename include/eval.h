@@ -26,7 +26,8 @@ typedef enum {
 	OP_SHR,
 	OP_ADDROF,
 	OP_DEREF,
-	OP
+	OP_MOD,
+	OP_SIZEOF
 } Operation;
 
 #endif
