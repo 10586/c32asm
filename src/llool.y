@@ -18,6 +18,7 @@
 	DeclaratorASTNode	*declarator;
 	std::string		*string;
 	StorageClassSpecifier	 stclass;
+	Operation		 oper;
 	TypeQualifier		 tqual;
 	int			 token;
 }
@@ -26,13 +27,20 @@
 %type <tqual> type_qualifier
 %type <stclass> storage_class_specifier 
 %type <expression> primary_expression postfix_expression unary_expression
-%type <expression> constant_expression
+%type <expression> constant_expression additive_expression
+%type <expression> multiplicative_expression shift_expression
+%type <expression> relational_expression equality_expression
+%type <expression> and_expression exclusive_or_expression
+%type <expression> inclusive_or_expression logical_and_expression
+%type <expression> logical_or_expression conditional_expression
+%type <expression> assignment_expression 
 %type <decls_lst> declaration_specifiers
 %type <declarator> declarator direct_declarator init_declarator
 %type <ptrspec> pointer
 %type <tqual_lst> type_qualifier_list
 %type <detr_lst> init_declarator_list
 %type <declaration> declaration
+%type <oper>	unary_operator
 
 %token <string> IDENTIFIER CONSTANT STRING_LITERAL TYPE_NAME
 %token <token> PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
@@ -152,31 +160,49 @@ shift_expression
 
 relational_expression
 	: shift_expression
-	| relational_expression '<' shift_expression
-	| relational_expression '>' shift_expression
-	| relational_expression LE_OP shift_expression
-	| relational_expression GE_OP shift_expression
+	| relational_expression '<' shift_expression {
+                $$ = new InfixExpression(OP_LT, $1, $3);
+        }
+	| relational_expression '>' shift_expression {
+                $$ = new InfixExpression(OP_GT, $1, $3);
+        }
+	| relational_expression LE_OP shift_expression {
+                $$ = new InfixExpression(OP_LEQ, $1, $3);
+        }
+	| relational_expression GE_OP shift_expression {
+                $$ = new InfixExpression(OP_GEQ, $1, $3);
+        }
 	;
 
 equality_expression
 	: relational_expression
-	| equality_expression EQ_OP relational_expression
-	| equality_expression NE_OP relational_expression
+	| equality_expression EQ_OP relational_expression  {
+                $$ = new InfixExpression(OP_EQ, $1, $3);
+        }
+	| equality_expression NE_OP relational_expression {
+                $$ = new InfixExpression(OP_NEQ, $1, $3);
+        }
 	;
 
 and_expression
 	: equality_expression
-	| and_expression '&' equality_expression
+	| and_expression '&' equality_expression  {
+                $$ = new InfixExpression(OP_AND, $1, $3);
+        }
 	;
 
 exclusive_or_expression
 	: and_expression
-	| exclusive_or_expression '^' and_expression
+	| exclusive_or_expression '^' and_expression {
+                $$ = new InfixExpression(OP_XOR, $1, $3);
+        }
 	;
 
 inclusive_or_expression
 	: exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression
+	| inclusive_or_expression '|' exclusive_or_expression {
+                $$ = new InfixExpression(OP_OR, $1, $3);
+        }
 	;
 
 logical_and_expression
