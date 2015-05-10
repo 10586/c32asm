@@ -20,6 +20,8 @@ typedef enum {
 	OP_BOOL_OR,
 	OP_LT,
 	OP_GT,
+	OP_GEQ,
+	OP_LEQ,
 	OP_EQ,
 	OP_NEQ,
 	OP_SHL,
@@ -27,7 +29,10 @@ typedef enum {
 	OP_ADDROF,
 	OP_DEREF,
 	OP_MOD,
-	OP_SIZEOF
+	OP_SIZEOF,
+	OP_ARRAY
+	OP_ASSIGN,
+	OP_NUMNOP /* unary + operator, no op that does validate numeric type */
 } Operation;
 
 #endif

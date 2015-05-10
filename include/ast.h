@@ -117,6 +117,15 @@ public:
 	};
 }
 
+class MemberReferenceExpression : public ExpressionASTNode {
+public:
+	bool			 pointer;
+	ExpressionASTNode	*parent;
+	string			 name;
+	MemberReferenceExpression(bool ptr, ExpressionASTNode *par, string &nm):
+		pointer(ptr), parent(par), name(nm) {};
+}
+
 class InfixExpression : public ExpressionASTNode {
 public:
 	ExpressionASTNode	*lefthand;

@@ -60,13 +60,25 @@ primary_expression
 
 postfix_expression
 	: primary_expression
-	| postfix_expression '[' expression ']'
+	| postfix_expression '[' expression ']'	{
+		$$ = new InfixExpression(OP_ARRAY, $1, $2);
+	}
 	| postfix_expression '(' ')'
 	| postfix_expression '(' argument_expression_list ')'
-	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
-	| postfix_expression INC_OP
-	| postfix_expression DEC_OP
+	| postfix_expression '.' IDENTIFIER {
+		$$ = new MemberReferenceExpression(false, $1, *$3);
+		delete $3;
+	}
+	| postfix_expression PTR_OP IDENTIFIER {
+		$$ = new MemberReferenceExpression(true, $1, *$3);
+		delete $3;
+	}
+	| postfix_expression INC_OP {
+		$$ = new UnaryExpression(OP_POSTINC, $1);
+	}
+	| postfix_expression DEC_OP {
+		$$ = new UnaryExpression(OP_POSTDEC, $1);
+	}
 	;
 
 argument_expression_list
@@ -76,20 +88,28 @@ argument_expression_list
 
 unary_expression
 	: postfix_expression
-	| INC_OP unary_expression
-	| DEC_OP unary_expression
-	| unary_operator cast_expression
-	| SIZEOF unary_expression
+	| INC_OP unary_expression {
+		$$ = new UnaryExpression(OP_PREINC, $2);
+	}
+	| DEC_OP unary_expression {
+		$$ = new UnaryExpression(OP_PREDEC, $2);
+	}
+	| unary_operator cast_expression {
+		$$ = new UnaryExpression($1, $2);
+	}
+	| SIZEOF unary_expression {
+		$$ = new UnaryExpression(OP_SIZEOF, $2);
+	}
 	| SIZEOF '(' type_name ')'
 	;
 
 unary_operator
-	: '&'
-	| '*'
-	| '+'
-	| '-'
-	| '~'
-	| '!'
+	: '&' {$$ = OP_ADDROF;}
+	| '*' {$$ = OP_DEREF;}
+	| '+' {$$ = OP_NUMNOP;}
+	| '-' {$$ = OP_NEGATE;}
+	| '~' {$$ = OP_NOT;}
+	| '!' {$$ = OP_BOOL_NOT;}
 	;
 
 cast_expression
@@ -99,21 +119,35 @@ cast_expression
 
 multiplicative_expression
 	: cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
-	| multiplicative_expression '%' cast_expression
+	| multiplicative_expression '*' cast_expression {
+		$$ = new InfixExpression(OP_MUL, $1, $3);
+	}
+	| multiplicative_expression '/' cast_expression {
+		$$ = new InfixExpression(OP_DIV, $1, $3);
+	}
+	| multiplicative_expression '%' cast_expression {
+		$$ = new InfixExpression(OP_MOD, $1, $3);
+	}
 	;
 
 additive_expression
 	: multiplicative_expression
-	| additive_expression '+' multiplicative_expression
-	| additive_expression '-' multiplicative_expression
+	| additive_expression '+' multiplicative_expression {
+		$$ = new InfixExpression(OP_ADD, $1, $3);
+	}
+	| additive_expression '-' multiplicative_expression {
+		$$ = new InfixExpression(OP_SUB, $1, $3);
+	}
 	;
 
 shift_expression
 	: additive_expression
-	| shift_expression LEFT_OP additive_expression
-	| shift_expression RIGHT_OP additive_expression
+	| shift_expression LEFT_OP additive_expression {
+		$$ = new InfixExpression(OP_SHL, $1, $3);
+	}
+	| shift_expression RIGHT_OP additive_expression {
+		$$ = new InfixExpression(OP_SHR, $1, $3);
+	}
 	;
 
 relational_expression
@@ -347,7 +381,7 @@ pointer
 	;
 
 type_qualifier_list
-	: type_qualifier { $$ = new TypeQualifierList; $$->push_back($1); }
+	: type_qualifier 	{ $$ = new TypeQualifierList; $$->push_back($1); }
 	| type_qualifier_list type_qualifier { $$ = $1; $$->push_back($2); }
 	;
 
