@@ -7,38 +7,35 @@ SRCDIR=src/
 LEX=flex
 YACC=bison
 INCLUDES=-Iinclude -I$(INTDIR)
-LIBS=-ll
+LIBS=-lfl
 CXX=g++
-LD=$(CXX)
-CFLAGS=-g
+CC=gcc
+LD=$(CC)
+CFLAGS=-g -DYYDEBUG=1
 CXXFLAGS=-g
 LDFLAGS=-g
 
-OBJPP=$(BUILDDIR)main.opp \
-	$(BUILDDIR)astcore.opp \
-	$(BUILDDIR)astdecl.opp \
-	$(BUILDDIR)symtype.opp \
-	$(BUILDDIR)asteval.opp
+OBJS=$(BUILDDIR)main.o
 
-$(BUILDDIR)%.opp: $(SRCDIR)%.cpp
-	$(CXX) -o $@ $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) -c $^
+$(BUILDDIR)%.o: $(SRCDIR)%.c
+	$(CC) -o $@ $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -c $^
 
-$(BUILDDIR)lloolc: $(BUILDDIR)llool_scan.o $(BUILDDIR)llool_parse.o $(OBJPP)
+$(BUILDDIR)c32as: $(BUILDDIR)c32asm_scan.o $(BUILDDIR)c32asm_parse.o $(OBJS)
 	$(LD) -o $@ $(LDFLAGS) $^ $(LIBS)
 
-$(BUILDDIR)llool_scan.o: $(INTDIR)llool_scan.cpp
-	$(CXX) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $@ -c $^
+$(BUILDDIR)c32asm_scan.o: $(INTDIR)c32asm_scan.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $@ -c $^
 
-$(BUILDDIR)llool_parse.o: $(INTDIR)llool_parse.cpp
-	$(CXX) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $@ -c $^
+$(BUILDDIR)c32asm_parse.o: $(INTDIR)c32asm_parse.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $@ -c $^
      
-$(INTDIR)llool_parse.cpp: $(SRCDIR)llool.y
+$(INTDIR)c32asm_parse.c: $(SRCDIR)c32asm.y
 	$(YACC) $(YFLAGS) -o $@ $^
 
-$(INTDIR)llool_parse.h: $(SRCDIR)llool.y
+$(INTDIR)c32asm_parse.h: $(SRCDIR)c32asm.y
 	$(YACC) $(YFLAGS) --defines=$@ $^
 
-$(INTDIR)llool_scan.cpp: $(SRCDIR)llool.l $(INTDIR)llool_parse.h
+$(INTDIR)c32asm_scan.c: $(SRCDIR)c32asm.l $(INTDIR)c32asm_parse.h
 	$(LEX) $(LFLAGS) -o $@ $^
      
 clean:
