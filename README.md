@@ -1,2 +1,2 @@
-# lloolc
-Low Level Object Oriented Language Compiler
+# c32asm
+Assembler for my minicomputer project at http://peterbjornx.nl/cpusite/
